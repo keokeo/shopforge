@@ -11,6 +11,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
+import AuthGuard, { useAdminUser } from '../components/AuthGuard';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -23,14 +24,16 @@ const menuItems = [
   { key: '/customers', icon: <UserOutlined />, label: '用户管理' },
 ];
 
-export default function AdminLayout() {
+function AdminLayoutInner() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { token: themeToken } = theme.useToken();
+  const user = useAdminUser();
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_refresh_token');
     navigate('/login');
   };
 
@@ -76,9 +79,14 @@ export default function AdminLayout() {
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
           />
-          <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
-            退出登录
-          </Button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Text type="secondary">
+              管理员: <Text strong>{user.username}</Text>
+            </Text>
+            <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
+              退出登录
+            </Button>
+          </div>
         </Header>
         <Content style={{
           margin: 24,
@@ -91,5 +99,13 @@ export default function AdminLayout() {
         </Content>
       </Layout>
     </Layout>
+  );
+}
+
+export default function AdminLayout() {
+  return (
+    <AuthGuard>
+      <AdminLayoutInner />
+    </AuthGuard>
   );
 }

@@ -22,6 +22,7 @@ export default function Login() {
 
       if (res.data && res.data.access_token) {
         localStorage.setItem('admin_token', res.data.access_token);
+        localStorage.setItem('admin_refresh_token', res.data.refresh_token);
         message.success('登录成功');
         navigate('/');
       }

@@ -19,14 +19,71 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截器 - 统一错误处理
+// 响应拦截器 - 401 时尝试 refresh token，失败则跳转登录
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (v: any) => void; reject: (e: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((p) => {
+    if (error) {
+      p.reject(error);
+    } else {
+      p.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('admin_token');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const refreshToken = localStorage.getItem('admin_refresh_token');
+
+      if (!refreshToken) {
+        localStorage.removeItem('admin_token');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // 已经在刷新中，排队等待
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        const { access_token, refresh_token: newRefreshToken } = res.data;
+        localStorage.setItem('admin_token', access_token);
+        localStorage.setItem('admin_refresh_token', newRefreshToken);
+
+        processQueue(null, access_token);
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_refresh_token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
+
     return Promise.reject(error);
   }
 );
@@ -47,7 +104,7 @@ export const authApi = {
 // ====== 商品 ======
 export const productsApi = {
   list: (params?: any) => api.get('/products', { params }),
-  get: (id: number) => api.get(`/products/${id}`),
+  get: (id: number) => api.get(`/products/${id}`, { params: { include_inactive: true } }),
   create: (data: any) => api.post('/products', data),
   update: (id: number, data: any) => api.put(`/products/${id}`, data),
   delete: (id: number) => api.delete(`/products/${id}`),
@@ -92,6 +149,11 @@ export const uploadApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+};
+
+// ====== 控制台 ======
+export const dashboardApi = {
+  getMetrics: () => api.get('/dashboard/metrics'),
 };
 
 export default api;

@@ -7,10 +7,12 @@ import Link from 'next/link';
 import { useCart } from '@/store/cart';
 import { ordersApi } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { state, dispatch, totalItems, totalPrice } = useCart();
+  const { user, token, loading: authLoading } = useAuth();
 
   const [shippingName, setShippingName] = useState('');
   const [shippingPhone, setShippingPhone] = useState('');
@@ -47,16 +49,15 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (state.items.length === 0) return;
 
+    if (!user || !token) {
+      router.push('/login?redirect=/checkout');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
     try {
-      const token = localStorage.getItem('shopforge-token');
-      if (!token) {
-        router.push('/login?redirect=/checkout');
-        return;
-      }
-
       await ordersApi.create(token, {
         items: state.items.map((item) => ({
           sku_id: item.skuId,
@@ -81,6 +82,21 @@ export default function CheckoutPage() {
       setSubmitting(false);
     }
   };
+
+  // 认证加载中
+  if (authLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <div className="animate-pulse bg-gray-100 rounded-2xl h-32" />
+      </div>
+    );
+  }
+
+  // 未登录重定向
+  if (!user || !token) {
+    router.push('/login?redirect=/checkout');
+    return null;
+  }
 
   if (state.items.length === 0) {
     return (

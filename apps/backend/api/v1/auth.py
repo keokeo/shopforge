@@ -3,11 +3,12 @@
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from core.security import hash_password, verify_password, create_access_token
+from core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_access_token
 from core.dependencies import get_current_active_user
 from models.user import User
 from schemas.user import UserCreate, UserResponse, Token
@@ -61,11 +62,44 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     if not user.is_active:
         raise HTTPException(status_code=400, detail="用户已被禁用")
 
-    access_token = create_access_token(data={"sub": str(user.id)})
-    return Token(access_token=access_token)
+    token_data = {"sub": str(user.id)}
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(data: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    """使用 Refresh Token 获取新的 Token 对"""
+    payload = decode_access_token(data.refresh_token)
+    if payload is None or payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="无效或已过期的 Refresh Token",
+        )
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="无效的 Token")
+
+    result = await db.execute(select(User).where(User.id == int(user_id)))
+    user = result.scalar_one_or_none()
+
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="用户不存在或已被禁用")
+
+    token_data = {"sub": str(user.id)}
+    new_access_token = create_access_token(data=token_data)
+    new_refresh_token = create_refresh_token(data=token_data)
+    return Token(access_token=new_access_token, refresh_token=new_refresh_token)
 
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_active_user)):
     """获取当前用户信息"""
     return current_user
+

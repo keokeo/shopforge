@@ -126,4 +126,9 @@ export const authApi = {
     });
   },
   me: (token: string) => request<any>('/auth/me', { token }),
+  refresh: (refreshToken: string) =>
+    request<any>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    }),
 };

@@ -26,7 +26,7 @@ export default function Products() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const data: any = await productsApi.list({ page, page_size: 20, search: search || undefined });
+      const data: any = await productsApi.list({ page, page_size: 20, search: search || undefined, include_inactive: true });
       setProducts(data.items || []);
       setTotal(data.total || 0);
     } catch (err) {

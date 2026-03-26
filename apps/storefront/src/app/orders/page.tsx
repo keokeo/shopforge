@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ordersApi } from '@/lib/api';
 import { formatPrice, ORDER_STATUS_MAP } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OrderItem {
   id: number;
@@ -38,11 +40,13 @@ const statusColorMap: Record<string, string> = {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user, token, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('shopforge-token');
-    if (!token) {
-      setLoading(false);
+    if (authLoading) return;
+    if (!user || !token) {
+      router.push('/login?redirect=/orders');
       return;
     }
 
@@ -50,7 +54,7 @@ export default function OrdersPage() {
       .then((data: any) => setOrders(data.items || []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user, token, router]);
 
   if (loading) {
     return (

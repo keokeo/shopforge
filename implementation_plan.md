@@ -187,3 +187,19 @@ cd /Users/keokeo/Dev/AI/shopforge
 docker compose up -d postgres redis
 # 确认容器正常运行: docker compose ps
 ```
+
+---
+
+## Phase 2: 后续开发计划 (按优先级排序)
+
+### 1. 完善用户会话与鉴权系统 (Auth & Session) - 最高优先级
+电商平台必须有完善的用户隔离。作为基础需要补齐 Next.js Storefront 的登录状态持久化、个人中心路由保护；以及 Admin 后台的安全退出及 JWT 无感刷新闭环。否则后续个人数据都是缺乏屏障的。
+
+### 2. 图片上传与静态资源管理 (Media Management) - 高优先级
+没有真实图片无法展现实物商品。建立后端图片上传存储服务（可初选本地服务代理作为过渡，后期随时转接 OSS/S3），并在 Admin 增加完整的拖拉拽图片上传与实时预览组件供发布商品用。
+
+### 3. 对接真实第三方支付 (Payment Integration) - 中高优先级
+实现真正的闭环流转：在现有结算流程内挂载 Stripe / PayPal（外贸独立站首选），或者微信/支付宝等支付网关；后端增加 Webhook 接收支付回调的支持，保证一旦客户真实付款完毕，订单状态能准确且安全的自动变更。
+
+### 4. 预备生产环境部署方案 (Deployment Readiness) - 中优先级
+为各个模块分别提供生产级别的轻量级 `Dockerfile`、配合 `Nginx` 等服务做统一出口分发、并且精简去开发依赖生成 `docker-compose.prod.yml`，为随时上线到自己的服务器做准备。

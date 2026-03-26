@@ -99,6 +99,10 @@ async def create_order(db: AsyncSession, user_id: int, data: OrderCreate) -> Ord
         sku = sku_result.scalar_one_or_none()
         if not sku:
             raise ValueError(f"SKU {item_data.sku_id} 不存在")
+        if not sku.is_active:
+            raise ValueError(f"SKU {sku.sku_code} 已下架")
+        if not sku.product.is_active:
+            raise ValueError(f"商品「{sku.product.name}」已下架，无法购买")
         if sku.stock < item_data.quantity:
             raise ValueError(f"SKU {sku.sku_code} 库存不足")
 

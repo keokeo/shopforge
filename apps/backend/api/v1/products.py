@@ -28,10 +28,15 @@ async def list_products(
     category_id: Optional[int] = None,
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
+    include_inactive: bool = Query(False, description="管理员使用: 包含未上架商品"),
     db: AsyncSession = Depends(get_db),
 ):
     """获取商品列表（分页）"""
-    items, total = await get_products(db, page, page_size, category_id, is_active, search)
+    # 默认只返回已上架商品，除非明确请求包含未上架
+    active_filter = is_active
+    if active_filter is None and not include_inactive:
+        active_filter = True
+    items, total = await get_products(db, page, page_size, category_id, active_filter, search)
     return PaginatedResponse(
         items=[ProductListResponse.model_validate(p) for p in items],
         total=total,
@@ -42,10 +47,16 @@ async def list_products(
 
 
 @router.get("/{product_id}", response_model=ProductDetailResponse)
-async def get_product_detail(product_id: int, db: AsyncSession = Depends(get_db)):
+async def get_product_detail(
+    product_id: int,
+    include_inactive: bool = Query(False),
+    db: AsyncSession = Depends(get_db),
+):
     """获取商品详情"""
     product = await get_product(db, product_id)
     if not product:
+        raise HTTPException(status_code=404, detail="商品不存在")
+    if not product.is_active and not include_inactive:
         raise HTTPException(status_code=404, detail="商品不存在")
     return product
 
@@ -54,7 +65,7 @@ async def get_product_detail(product_id: int, db: AsyncSession = Depends(get_db)
 async def get_product_by_slug_route(slug: str, db: AsyncSession = Depends(get_db)):
     """通过 slug 获取商品详情（SEO 友好）"""
     product = await get_product_by_slug(db, slug)
-    if not product:
+    if not product or not product.is_active:
         raise HTTPException(status_code=404, detail="商品不存在")
     return product
 

@@ -3,17 +3,24 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { authApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || '/';
+  const { user, login } = useAuth();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 已登录则跳转
+  if (user) {
+    router.push(redirectPath);
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,14 +28,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res: any = await authApi.login(username, password);
-      if (res.access_token) {
-        localStorage.setItem('shopforge-token', res.access_token);
-        // Maybe fetch user profile here if needed, but for now just redirect
-        router.push(redirectPath);
-      }
+      await login(username, password);
+      router.push(redirectPath);
     } catch (err: any) {
-      if (err.response?.status === 401) {
+      if (err.status === 401) {
         setError('账号或密码错误');
       } else {
         setError('登录失败，请稍后重试');

@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { authApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || '/';
+  const { user, register } = useAuth();
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -16,21 +17,20 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // 已登录则跳转
+  if (user) {
+    router.push(redirectPath);
+    return null;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // 1. Register
-      await authApi.register({ username, email, password });
-      
-      // 2. Auto-login after successful registration
-      const res: any = await authApi.login(username, password);
-      if (res.access_token) {
-        localStorage.setItem('shopforge-token', res.access_token);
-        router.push(redirectPath);
-      }
+      await register({ username, email, password });
+      router.push(redirectPath);
     } catch (err: any) {
       setError(err?.data?.detail || err?.message || '注册失败，请检查填写信息');
     } finally {
