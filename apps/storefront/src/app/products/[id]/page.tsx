@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -61,6 +61,7 @@ export default function ProductDetailPage() {
   const [selectedValues, setSelectedValues] = useState<Record<number, number>>({});
   const [addedToCart, setAddedToCart] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     if (!productId) return;
@@ -108,6 +109,30 @@ export default function ProductDetailPage() {
         ...product.images.map((img) => ({ url: img.image_url, alt: img.alt_text || product.name })),
       ]
     : [];
+
+  // Lightbox keyboard handler
+  const handleLightboxKey = useCallback(
+    (e: KeyboardEvent) => {
+      if (!lightboxOpen) return;
+      if (e.key === 'Escape') setLightboxOpen(false);
+      if (e.key === 'ArrowRight')
+        setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+      if (e.key === 'ArrowLeft')
+        setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+    },
+    [lightboxOpen, allImages.length]
+  );
+
+  useEffect(() => {
+    if (lightboxOpen) {
+      document.addEventListener('keydown', handleLightboxKey);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleLightboxKey);
+      document.body.style.overflow = '';
+    };
+  }, [lightboxOpen, handleLightboxKey]);
 
   const handleAddToCart = () => {
     if (!product || !matchedSku || matchedSku.stock < quantity) return;
@@ -178,7 +203,10 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Image Gallery */}
         <div>
-          <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden relative">
+          <div
+            className="aspect-square bg-gray-100 rounded-2xl overflow-hidden relative cursor-zoom-in"
+            onClick={() => allImages.length > 0 && setLightboxOpen(true)}
+          >
             {allImages.length > 0 ? (
               <Image
                 src={allImages[currentImageIndex].url}
@@ -191,6 +219,11 @@ export default function ProductDetailPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-24 h-24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
                 </svg>
+              </div>
+            )}
+            {allImages.length > 0 && (
+              <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                🔍 点击放大
               </div>
             )}
           </div>
@@ -316,6 +349,89 @@ export default function ProductDetailPage() {
           )}
         </div>
       </div>
+      {/* Lightbox */}
+      {lightboxOpen && allImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setLightboxOpen(false)}
+        >
+          {/* Close button */}
+          <button
+            className="absolute top-6 right-6 text-white/80 hover:text-white text-3xl z-10 transition-colors"
+            onClick={() => setLightboxOpen(false)}
+          >
+            ✕
+          </button>
+
+          {/* Counter */}
+          <div className="absolute top-6 left-6 text-white/70 text-sm">
+            {currentImageIndex + 1} / {allImages.length}
+          </div>
+
+          {/* Previous button */}
+          {allImages.length > 1 && (
+            <button
+              className="absolute left-4 md:left-8 text-white/60 hover:text-white text-4xl z-10 transition-colors p-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+              }}
+            >
+              ‹
+            </button>
+          )}
+
+          {/* Image */}
+          <div
+            className="relative max-w-[90vw] max-h-[85vh] w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={allImages[currentImageIndex].url}
+              alt={allImages[currentImageIndex].alt}
+              fill
+              className="object-contain"
+              sizes="90vw"
+              priority
+            />
+          </div>
+
+          {/* Next button */}
+          {allImages.length > 1 && (
+            <button
+              className="absolute right-4 md:right-8 text-white/60 hover:text-white text-4xl z-10 transition-colors p-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+              }}
+            >
+              ›
+            </button>
+          )}
+
+          {/* Thumbnail strip */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              {allImages.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(i);
+                  }}
+                  className={`relative w-12 h-12 rounded-md overflow-hidden border-2 transition-all ${
+                    i === currentImageIndex
+                      ? 'border-white scale-110'
+                      : 'border-white/30 hover:border-white/60'
+                  }`}
+                >
+                  <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="48px" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

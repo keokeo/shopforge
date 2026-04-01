@@ -35,6 +35,12 @@ class CategoryResponse(CategoryBase):
     model_config = {"from_attributes": True}
 
 
+class ProductImageCreate(BaseModel):
+    image_url: str
+    alt_text: Optional[str] = None
+    sort_order: int = 0
+
+
 class ProductImageResponse(BaseModel):
     id: int
     image_url: str
@@ -57,7 +63,7 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    pass
+    images: Optional[list[ProductImageCreate]] = None
 
 
 class ProductUpdate(BaseModel):
@@ -70,6 +76,7 @@ class ProductUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_featured: Optional[bool] = None
     sort_order: Optional[int] = None
+    images: Optional[list[ProductImageCreate]] = None
 
 
 class ProductListResponse(BaseModel):

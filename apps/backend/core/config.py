@@ -29,7 +29,10 @@ class Settings(BaseSettings):
 
     # 文件上传
     UPLOAD_DIR: str = "./uploads"
+    THUMB_DIR: str = "./uploads/thumbs"
     MAX_FILE_SIZE: int = 10485760  # 10MB
+    MAX_IMAGE_WIDTH: int = 1920
+    THUMB_SIZE: int = 300
 
     @property
     def cors_origins_list(self) -> list[str]:

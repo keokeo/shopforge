@@ -9,6 +9,7 @@ interface Product {
   id: number;
   name: string;
   slug: string;
+  main_image_url?: string;
   base_price: number;
   is_active: boolean;
   is_featured: boolean;
@@ -52,6 +53,42 @@ export default function Products() {
 
   const columns: ColumnsType<Product> = [
     { title: 'ID', dataIndex: 'id', width: 70 },
+    {
+      title: '图片',
+      dataIndex: 'main_image_url',
+      width: 70,
+      render: (url: string) => {
+        if (!url) {
+          return (
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 6,
+                background: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ccc',
+                fontSize: 16,
+              }}
+            >
+              📷
+            </div>
+          );
+        }
+        // Use thumbnail for faster list loading
+        const thumbUrl = url.replace('/uploads/', '/uploads/thumbs/');
+        return (
+          <img
+            src={thumbUrl}
+            alt="商品"
+            style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }}
+            onError={(e) => { (e.target as HTMLImageElement).src = url; }}
+          />
+        );
+      },
+    },
     { title: '商品名称', dataIndex: 'name', ellipsis: true },
     {
       title: '价格',

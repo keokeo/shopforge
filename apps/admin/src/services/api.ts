@@ -149,6 +149,15 @@ export const uploadApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  images: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    return api.post('/upload/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  deleteImage: (filename: string) =>
+    api.delete('/upload/image', { params: { filename } }),
 };
 
 // ====== 控制台 ======

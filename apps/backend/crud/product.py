@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from models.product import Product, ProductImage
 from models.category import Category
-from schemas.product import ProductCreate, ProductUpdate, CategoryCreate, CategoryUpdate
+from schemas.product import ProductCreate, ProductUpdate, CategoryCreate, CategoryUpdate, ProductImageCreate
 
 
 # ====== 分类 CRUD ======
@@ -106,9 +106,22 @@ async def get_product_by_slug(db: AsyncSession, slug: str) -> Optional[Product]:
 from models.sku import SKU
 
 async def create_product(db: AsyncSession, data: ProductCreate) -> Product:
-    product = Product(**data.model_dump())
+    product_data = data.model_dump(exclude={"images"})
+    images_data = data.images
+    product = Product(**product_data)
     db.add(product)
     await db.flush()
+    
+    # Save product images if provided
+    if images_data:
+        for img_data in images_data:
+            img = ProductImage(
+                product_id=product.id,
+                image_url=img_data.image_url,
+                alt_text=img_data.alt_text,
+                sort_order=img_data.sort_order,
+            )
+            db.add(img)
     
     # Auto-create a default SKU so the product can be purchased immediately
     default_sku = SKU(
@@ -129,8 +142,29 @@ async def update_product(db: AsyncSession, product_id: int, data: ProductUpdate)
     product = await get_product(db, product_id)
     if not product:
         return None
-    for key, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    images_data = update_data.pop("images", None)
+    
+    for key, value in update_data.items():
         setattr(product, key, value)
+    
+    # Replace images if provided
+    if images_data is not None:
+        # Delete existing images
+        from sqlalchemy import delete
+        await db.execute(
+            delete(ProductImage).where(ProductImage.product_id == product_id)
+        )
+        # Insert new images
+        for img_data in images_data:
+            img = ProductImage(
+                product_id=product_id,
+                image_url=img_data["image_url"],
+                alt_text=img_data.get("alt_text"),
+                sort_order=img_data.get("sort_order", 0),
+            )
+            db.add(img)
+    
     await db.flush()
     await db.refresh(product)
     return product

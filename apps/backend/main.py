@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 创建上传目录
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    os.makedirs(settings.THUMB_DIR, exist_ok=True)
     yield
 
 
@@ -44,6 +45,8 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 # 静态文件（上传的图片）
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.THUMB_DIR, exist_ok=True)
+app.mount("/uploads/thumbs", StaticFiles(directory=settings.THUMB_DIR), name="thumbs")
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 

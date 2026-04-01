@@ -1,10 +1,113 @@
 import { Card, Form, Input, InputNumber, Switch, Select, Button, Space, Divider, message, Spin, Upload } from 'antd';
-import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { LoadingOutlined, PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { productsApi, categoriesApi, uploadApi } from '../services/api';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const { TextArea } = Input;
+
+interface GalleryImage {
+  uid: string;
+  image_url: string;
+  thumbnail_url?: string;
+  alt_text: string;
+  sort_order: number;
+}
+
+// --- Sortable gallery item component ---
+function SortableGalleryItem({
+  item,
+  onRemove,
+  onAltChange,
+}: {
+  item: GalleryImage;
+  onRemove: () => void;
+  onAltChange: (val: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.uid,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    border: '1px solid #d9d9d9',
+    borderRadius: 8,
+    padding: 8,
+    width: 140,
+    flexShrink: 0,
+    background: '#fff',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div style={{ position: 'relative', marginBottom: 6 }}>
+        <img
+          src={item.thumbnail_url || item.image_url}
+          alt={item.alt_text || '商品图片'}
+          style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 6 }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: 4,
+            right: 4,
+            display: 'flex',
+            gap: 4,
+          }}
+        >
+          <Button
+            type="primary"
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={onRemove}
+            style={{ minWidth: 24, padding: '0 4px' }}
+          />
+        </div>
+        <div
+          {...listeners}
+          style={{
+            position: 'absolute',
+            top: 4,
+            left: 4,
+            cursor: 'grab',
+            background: 'rgba(0,0,0,0.4)',
+            borderRadius: 4,
+            padding: '2px 4px',
+            color: '#fff',
+            fontSize: 12,
+          }}
+        >
+          <HolderOutlined />
+        </div>
+      </div>
+      <Input
+        size="small"
+        placeholder="alt 描述"
+        value={item.alt_text}
+        onChange={(e) => onAltChange(e.target.value)}
+        style={{ fontSize: 12 }}
+      />
+    </div>
+  );
+}
 
 export default function ProductForm() {
   const [form] = Form.useForm();
@@ -17,6 +120,14 @@ export default function ProductForm() {
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>('');
+
+  // Gallery state
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   useEffect(() => {
     categoriesApi.list()
@@ -31,6 +142,18 @@ export default function ProductForm() {
         .then((data: any) => {
           form.setFieldsValue(data);
           if (data.main_image_url) setImageUrl(data.main_image_url);
+          // Load existing gallery images
+          if (data.images && Array.isArray(data.images)) {
+            setGalleryImages(
+              data.images.map((img: any, i: number) => ({
+                uid: `existing-${img.id || i}`,
+                image_url: img.image_url,
+                thumbnail_url: img.thumbnail_url,
+                alt_text: img.alt_text || '',
+                sort_order: img.sort_order ?? i,
+              }))
+            );
+          }
         })
         .catch(() => message.error('加载商品信息失败'))
         .finally(() => setLoading(false));
@@ -40,11 +163,21 @@ export default function ProductForm() {
   const onFinish = async (values: any) => {
     setSubmitting(true);
     try {
+      // Attach gallery images
+      const payload = {
+        ...values,
+        images: galleryImages.map((img, i) => ({
+          image_url: img.image_url,
+          alt_text: img.alt_text || null,
+          sort_order: i,
+        })),
+      };
+
       if (isEdit) {
-        await productsApi.update(Number(id), values);
+        await productsApi.update(Number(id), payload);
         message.success('更新成功');
       } else {
-        await productsApi.create(values);
+        await productsApi.create(payload);
         message.success('创建成功');
       }
       navigate('/products');
@@ -67,6 +200,7 @@ export default function ProductForm() {
     }
   };
 
+  // --- Main image upload ---
   const handleUpload = async (options: any) => {
     const { file, onSuccess, onError } = options;
     setUploadingImage(true);
@@ -75,7 +209,7 @@ export default function ProductForm() {
       setImageUrl(res.url);
       form.setFieldValue('main_image_url', res.url);
       onSuccess?.(res);
-      message.success('上传成功');
+      message.success('主图上传成功');
     } catch (err) {
       onError?.(err as any);
       message.error('上传失败');
@@ -84,10 +218,75 @@ export default function ProductForm() {
     }
   };
 
+  // --- Gallery image upload ---
+  const handleGalleryUpload = async (options: any) => {
+    const { file, onSuccess, onError } = options;
+    setUploadingGallery(true);
+    try {
+      const res: any = await uploadApi.image(file);
+      const newImage: GalleryImage = {
+        uid: `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        image_url: res.url,
+        thumbnail_url: res.thumbnail_url,
+        alt_text: '',
+        sort_order: galleryImages.length,
+      };
+      setGalleryImages((prev) => [...prev, newImage]);
+      onSuccess?.(res);
+    } catch (err) {
+      onError?.(err as any);
+      message.error('画廊图片上传失败');
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  // --- Gallery actions ---
+  const handleGalleryRemove = (uid: string) => {
+    setGalleryImages((prev) => prev.filter((img) => img.uid !== uid));
+  };
+
+  const handleGalleryAltChange = (uid: string, value: string) => {
+    setGalleryImages((prev) =>
+      prev.map((img) => (img.uid === uid ? { ...img, alt_text: value } : img))
+    );
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setGalleryImages((prev) => {
+      const oldIndex = prev.findIndex((item) => item.uid === active.id);
+      const newIndex = prev.findIndex((item) => item.uid === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+
   const uploadButton = (
     <div>
       {uploadingImage ? <LoadingOutlined /> : <PlusOutlined />}
-      <div style={{ marginTop: 8 }}>上传图片</div>
+      <div style={{ marginTop: 8 }}>上传主图</div>
+    </div>
+  );
+
+  const galleryUploadButton = (
+    <div
+      style={{
+        width: 140,
+        height: 140,
+        border: '1px dashed #d9d9d9',
+        borderRadius: 8,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        color: '#999',
+        flexShrink: 0,
+      }}
+    >
+      {uploadingGallery ? <LoadingOutlined /> : <PlusOutlined />}
+      <div style={{ marginTop: 8, fontSize: 12 }}>添加图片</div>
     </div>
   );
 
@@ -143,6 +342,47 @@ export default function ProductForm() {
               options={categories.map((c) => ({ value: c.id, label: c.name }))}
             />
           </Form.Item>
+        </Card>
+
+        {/* Gallery Section */}
+        <Card
+          title="商品画廊"
+          extra={<span style={{ color: '#999', fontSize: 12 }}>拖拽图片可调整顺序，最多 10 张</span>}
+          style={{ marginBottom: 16 }}
+        >
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext
+                items={galleryImages.map((img) => img.uid)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {galleryImages.map((img) => (
+                  <SortableGalleryItem
+                    key={img.uid}
+                    item={img}
+                    onRemove={() => handleGalleryRemove(img.uid)}
+                    onAltChange={(val) => handleGalleryAltChange(img.uid, val)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+
+            {galleryImages.length < 10 && (
+              <Upload
+                name="file"
+                showUploadList={false}
+                customRequest={handleGalleryUpload}
+                accept="image/*"
+              >
+                {galleryUploadButton}
+              </Upload>
+            )}
+          </div>
+          {galleryImages.length === 0 && (
+            <div style={{ color: '#bbb', fontSize: 13, marginTop: 8 }}>
+              上传商品展示图片，在商品详情页中展示为画廊
+            </div>
+          )}
         </Card>
 
         <Card title="销售信息" style={{ marginBottom: 16 }}>
