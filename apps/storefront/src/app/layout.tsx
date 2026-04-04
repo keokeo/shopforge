@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -10,6 +11,11 @@ const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
@@ -24,10 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${geistSans.variable} font-sans antialiased bg-white text-gray-900`}>
+      <body className={`${geistSans.variable} ${playfair.variable} font-sans antialiased bg-paper text-ink`}>
         <AuthProvider>
           <CartProvider>
-            <div className="min-h-screen flex flex-col">
+            <div className="min-h-screen flex flex-col relative selection:bg-ink selection:text-paper">
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />

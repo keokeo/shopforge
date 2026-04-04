@@ -2,42 +2,43 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="bg-ink text-stone-400 border-t border-stone-800">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              ShopForge
+            <span className="font-serif text-3xl font-medium text-paper tracking-tight">
+              ShopForge.
             </span>
-            <p className="mt-3 text-gray-400 max-w-md">
-              现代化电商独立站，为您提供优质产品与极致购物体验。
+            <p className="mt-6 max-w-sm text-sm font-light leading-relaxed">
+              Curating global artifacts for the modern connoisseur. An uncompromised standard of exceptional quality.
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">快速链接</h3>
-            <ul className="space-y-2">
-              <li><Link href="/products" className="hover:text-white transition-colors">全部商品</Link></li>
-              <li><Link href="/cart" className="hover:text-white transition-colors">购物车</Link></li>
-              <li><Link href="/orders" className="hover:text-white transition-colors">我的订单</Link></li>
+            <h3 className="text-xs uppercase tracking-[0.2em] text-paper mb-6 font-semibold">快速链接</h3>
+            <ul className="space-y-4 text-sm">
+              <li><Link href="/products" className="hover:text-paper transition-colors">全部商品</Link></li>
+              <li><Link href="/cart" className="hover:text-paper transition-colors">购物车</Link></li>
+              <li><Link href="/orders" className="hover:text-paper transition-colors">我的订单</Link></li>
             </ul>
           </div>
 
           {/* Help */}
           <div>
-            <h3 className="text-white font-semibold mb-4">帮助中心</h3>
-            <ul className="space-y-2">
-              <li><span className="hover:text-white transition-colors cursor-pointer">关于我们</span></li>
-              <li><span className="hover:text-white transition-colors cursor-pointer">联系客服</span></li>
-              <li><span className="hover:text-white transition-colors cursor-pointer">退换政策</span></li>
+            <h3 className="text-xs uppercase tracking-[0.2em] text-paper mb-6 font-semibold">帮助中心</h3>
+            <ul className="space-y-4 text-sm">
+              <li><span className="hover:text-paper transition-colors cursor-pointer">关于我们</span></li>
+              <li><span className="hover:text-paper transition-colors cursor-pointer">联系客服</span></li>
+              <li><span className="hover:text-paper transition-colors cursor-pointer">退换政策</span></li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
-          © {new Date().getFullYear()} ShopForge. All rights reserved.
+        <div className="border-t border-stone-800 mt-20 pt-8 flex flex-col md:flex-row justify-between items-center text-xs uppercase tracking-widest text-stone-500">
+          <div>© {new Date().getFullYear()} ShopForge.</div>
+          <div className="mt-4 md:mt-0">All rights reserved.</div>
         </div>
       </div>
     </footer>

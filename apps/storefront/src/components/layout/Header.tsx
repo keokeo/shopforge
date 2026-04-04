@@ -3,72 +3,71 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ShoppingBag, Menu, X } from 'lucide-react';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, loading, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-50 bg-paper border-b border-stone-200">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              ShopForge
+            <span className="text-3xl font-serif font-medium text-ink tracking-tight">
+              ShopForge.
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+          <nav className="hidden md:flex items-center gap-10">
+            <Link href="/" className="text-sm tracking-[0.1em] uppercase text-stone-500 hover:text-ink transition-colors">
               首页
             </Link>
-            <Link href="/products" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+            <Link href="/products" className="text-sm tracking-[0.1em] uppercase text-stone-500 hover:text-ink transition-colors">
               全部商品
             </Link>
-            <Link href="/orders" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+            <Link href="/orders" className="text-sm tracking-[0.1em] uppercase text-stone-500 hover:text-ink transition-colors">
               我的订单
             </Link>
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-6">
             <Link
               href="/cart"
-              className="relative p-2 text-gray-700 hover:text-indigo-600 transition-colors"
+              className="relative text-ink hover:text-stone-500 transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-              </svg>
+              <ShoppingBag strokeWidth={1.5} className="w-5 h-5" />
             </Link>
 
             {/* Auth State */}
             {!loading && (
-              <div className="hidden md:flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-6 border-l border-stone-200 pl-6">
                 {user ? (
                   <>
-                    <span className="text-sm text-gray-600">
-                      你好, <span className="font-medium text-gray-900">{user.username}</span>
+                    <span className="text-sm tracking-widest text-stone-500 uppercase">
+                      Hello, <span className="text-ink">{user.username}</span>
                     </span>
                     <button
                       onClick={logout}
-                      className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+                      className="text-xs uppercase tracking-[0.2em] text-stone-400 hover:text-ink transition-colors"
                     >
-                      退出
+                      Logout
                     </button>
                   </>
                 ) : (
                   <>
                     <Link
                       href="/login"
-                      className="text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+                      className="text-xs uppercase tracking-[0.2em] text-stone-500 hover:text-ink transition-colors"
                     >
                       登录
                     </Link>
                     <Link
                       href="/register"
-                      className="text-sm font-medium px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
+                      className="text-xs uppercase tracking-[0.2em] px-5 py-2.5 bg-ink text-paper hover:bg-stone-800 transition-colors border border-ink"
                     >
                       注册
                     </Link>
@@ -79,53 +78,51 @@ export default function Header() {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2"
+              className="md:hidden text-ink"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d={mobileMenuOpen ? "M6 18 18 6M6 6l12 12" : "M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"} />
-              </svg>
+              {mobileMenuOpen ? <X strokeWidth={1.5} className="w-6 h-6" /> : <Menu strokeWidth={1.5} className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile Nav */}
         {mobileMenuOpen && (
-          <nav className="md:hidden pb-4 space-y-2">
-            <Link href="/" className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50">
+          <nav className="md:hidden pb-6 space-y-4 border-t border-stone-200 mt-4 pt-4">
+            <Link href="/" className="block text-sm tracking-[0.1em] uppercase text-ink hover:text-stone-500">
               首页
             </Link>
-            <Link href="/products" className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50">
+            <Link href="/products" className="block text-sm tracking-[0.1em] uppercase text-ink hover:text-stone-500">
               全部商品
             </Link>
-            <Link href="/orders" className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50">
+            <Link href="/orders" className="block text-sm tracking-[0.1em] uppercase text-ink hover:text-stone-500">
               我的订单
             </Link>
-            <Link href="/cart" className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50">
+            <Link href="/cart" className="block text-sm tracking-[0.1em] uppercase text-ink hover:text-stone-500">
               购物车
             </Link>
-            <div className="border-t border-gray-100 pt-2 mt-2">
+            <div className="border-t border-stone-200 pt-4 mt-4">
               {user ? (
                 <>
-                  <span className="block px-3 py-2 text-sm text-gray-600">
-                    你好, <span className="font-medium text-gray-900">{user.username}</span>
+                  <span className="block text-sm tracking-[0.1em] uppercase text-stone-500 mb-4">
+                    Hello, <span className="text-ink">{user.username}</span>
                   </span>
                   <button
                     onClick={logout}
-                    className="block w-full text-left px-3 py-2 rounded-lg text-red-500 hover:bg-red-50"
+                    className="block text-sm tracking-[0.1em] uppercase text-red-800 hover:text-red-600"
                   >
                     退出登录
                   </button>
                 </>
               ) : (
-                <>
-                  <Link href="/login" className="block px-3 py-2 rounded-lg text-indigo-600 font-medium hover:bg-indigo-50">
+                <div className="flex flex-col gap-4">
+                  <Link href="/login" className="block text-sm tracking-[0.1em] uppercase text-ink hover:text-stone-500">
                     登录
                   </Link>
-                  <Link href="/register" className="block px-3 py-2 rounded-lg text-indigo-600 font-medium hover:bg-indigo-50">
+                  <Link href="/register" className="block text-center text-xs uppercase tracking-[0.2em] px-4 py-3 bg-ink text-paper hover:bg-stone-800 border border-ink">
                     注册
                   </Link>
-                </>
+                </div>
               )}
             </div>
           </nav>
