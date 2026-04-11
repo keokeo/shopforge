@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
 
     # 数据库
-    DATABASE_URL: str = "postgresql+asyncpg://shopforge:shopforge_dev_2024@localhost:5432/shopforge"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./shopforge.db"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

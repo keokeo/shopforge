@@ -3,7 +3,13 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } },
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,80 +38,105 @@ export default function RegisterPage() {
       await register({ username, email, password });
       router.push(redirectPath);
     } catch (err: any) {
-      setError(err?.data?.detail || err?.message || '注册失败，请检查填写信息');
+      setError(err?.data?.detail || err?.message || 'Registration failed. Please check your details.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">创建一个新账号</h1>
-        <p className="text-center text-sm text-gray-500 mb-8">加入 ShopForge，发现更多好物</p>
+    <div className="min-h-[80vh] flex items-center justify-center px-6 py-20">
+      <motion.div
+        variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+        initial="hidden"
+        animate="show"
+        className="w-full max-w-md"
+      >
+        {/* Header */}
+        <motion.div variants={fadeUp} className="text-center mb-16">
+          <div className="w-px h-12 bg-stone-300 mx-auto mb-8" />
+          <h1 className="text-4xl md:text-5xl font-serif text-ink tracking-tight mb-4">
+            Create Your Account
+          </h1>
+          <p className="text-sm font-light text-stone-500">
+            Join ShopForge to discover exceptional pieces.
+          </p>
+        </motion.div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <motion.form variants={fadeUp} onSubmit={handleSubmit} className="space-y-8">
           {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl text-center">
+            <div className="py-3 text-center text-xs uppercase tracking-widest text-red-800 border border-red-200 bg-red-50/50">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">用户名 *</label>
+            <label className="block text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-3">
+              Username
+            </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="数字、字母组合"
+              className="w-full pb-3 bg-transparent border-b border-stone-200 text-ink text-sm font-light focus:outline-none focus:border-ink transition-colors placeholder:text-stone-300"
+              placeholder="Choose a unique username"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">邮箱 *</label>
+            <label className="block text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-3">
+              Email Address
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="您的常用邮箱"
+              className="w-full pb-3 bg-transparent border-b border-stone-200 text-ink text-sm font-light focus:outline-none focus:border-ink transition-colors placeholder:text-stone-300"
+              placeholder="your@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">密码 *</label>
+            <label className="block text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-3">
+              Password
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="至少 6 位字符"
+              className="w-full pb-3 bg-transparent border-b border-stone-200 text-ink text-sm font-light focus:outline-none focus:border-ink transition-colors placeholder:text-stone-300"
+              placeholder="Min 6 characters"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full mt-2 py-4 font-semibold rounded-full transition-colors ${
-              loading ? 'bg-indigo-400 text-white cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            className={`w-full py-4 text-xs font-semibold uppercase tracking-[0.2em] transition-all duration-500 mt-4 ${
+              loading
+                ? 'bg-stone-200 text-stone-400 cursor-not-allowed border border-stone-200'
+                : 'bg-ink text-paper hover:bg-stone-900 border border-ink'
             }`}
           >
-            {loading ? '注册中...' : '注册并登录'}
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
-        </form>
+        </motion.form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
-          已有账号？{' '}
-          <Link href={`/login?redirect=${encodeURIComponent(redirectPath)}`} className="text-indigo-600 font-semibold hover:underline">
-            直接登录
+        <motion.div variants={fadeUp} className="mt-12 text-center">
+          <span className="text-sm font-light text-stone-500">Already have an account? </span>
+          <Link
+            href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
+            className="text-xs uppercase tracking-widest text-ink font-semibold hover:text-stone-500 transition-colors border-b border-ink hover:border-stone-500 pb-0.5"
+          >
+            Sign In
           </Link>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
+

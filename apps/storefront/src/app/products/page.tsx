@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { productsApi, categoriesApi } from '@/lib/api';
 import ProductCard from '@/components/product/ProductCard';
+import { motion } from 'framer-motion';
 
 interface Product {
   id: number;
@@ -74,117 +75,120 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 pb-32">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16 gap-8 border-b border-ink pb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">全部商品</h1>
+          <h1 className="text-4xl md:text-5xl font-serif text-ink tracking-tight">The Catalog</h1>
           {total > 0 && (
-            <p className="mt-1 text-gray-500">共 {total} 件商品</p>
+            <p className="mt-4 text-xs uppercase tracking-widest text-stone-500">
+              {total} Selected Artifacts
+            </p>
           )}
         </div>
-        <form onSubmit={handleSearch} className="flex items-center gap-2">
+        <form onSubmit={handleSearch} className="flex items-center w-full md:w-auto relative group">
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索商品..."
-            className="px-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            placeholder="DISCOVER..."
+            className="w-full md:w-64 px-4 py-3 bg-transparent border-b border-stone-200 text-xs tracking-widest uppercase font-semibold text-ink focus:outline-none focus:border-ink transition-colors placeholder:text-stone-300"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
+            className="absolute right-0 text-xs font-bold tracking-[0.2em] uppercase text-stone-400 hover:text-ink transition-colors py-3"
           >
-            搜索
+            →
           </button>
         </form>
       </div>
 
-      {/* Category Filter */}
-      {categories.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-8">
-          <button
-            onClick={() => { setSelectedCategory(undefined); setPage(1); }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              !selectedCategory
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            全部
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedCategory === cat.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+      <div className="flex flex-col lg:flex-row gap-16">
+        {/* Sidebar Filters */}
+        <div className="lg:w-48 flex-shrink-0">
+          <h3 className="text-xs uppercase tracking-[0.2em] text-ink font-semibold mb-8">Refine</h3>
+          <ul className="space-y-4">
+            <li>
+              <button
+                onClick={() => { setSelectedCategory(undefined); setPage(1); }}
+                className={`text-xs uppercase tracking-widest transition-colors ${
+                  !selectedCategory ? 'text-ink font-semibold' : 'text-stone-400 hover:text-ink'
+                }`}
+              >
+                All Categories
+              </button>
+            </li>
+            {categories.map((cat) => (
+              <li key={cat.id}>
+                <button
+                  onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
+                  className={`text-xs uppercase tracking-widest transition-colors ${
+                    selectedCategory === cat.id ? 'text-ink font-semibold' : 'text-stone-400 hover:text-ink'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
 
-      {/* Product Grid */}
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="aspect-square bg-gray-200 rounded-2xl" />
-              <div className="mt-3 h-4 bg-gray-200 rounded w-3/4" />
-              <div className="mt-2 h-5 bg-gray-200 rounded w-1/4" />
+        {/* Product Grid */}
+        <div className="flex-1">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[3/4] bg-stone-100 mb-4" />
+                  <div className="mx-auto h-4 bg-stone-100 w-1/2 mb-2" />
+                  <div className="mx-auto h-3 bg-stone-100 w-1/4" />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      ) : products.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              mainImageUrl={product.main_image_url}
-              basePrice={product.base_price}
-              isFeatured={product.is_featured}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-20">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 mx-auto text-gray-300">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-          </svg>
-          <h2 className="mt-4 text-xl font-medium text-gray-500">暂无商品</h2>
-          <p className="mt-2 text-gray-400">店铺正在上架精选商品，敬请期待</p>
-        </div>
-      )}
+          ) : products.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  mainImageUrl={product.main_image_url}
+                  basePrice={product.base_price}
+                  isFeatured={product.is_featured}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-32 border border-stone-200 bg-stone-50">
+              <h2 className="font-serif text-2xl text-ink mb-2">No Artifacts Found</h2>
+              <p className="text-sm font-light text-stone-500">The requested collection is currently empty.</p>
+            </div>
+          )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-12">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage(page - 1)}
-            className="px-4 py-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            上一页
-          </button>
-          <span className="px-4 py-2 text-gray-500">
-            {page} / {totalPages}
-          </span>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
-            className="px-4 py-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            下一页
-          </button>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-24 pt-8 border-t border-stone-200 text-xs uppercase tracking-widest">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                className="text-stone-400 hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-semibold"
+              >
+                Previous
+              </button>
+              <span className="text-ink">
+                {page} / {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage(page + 1)}
+                className="text-stone-400 hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-semibold"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

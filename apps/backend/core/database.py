@@ -9,12 +9,17 @@ from core.config import get_settings
 
 settings = get_settings()
 
+engine_args = {"echo": False}
+if not settings.DATABASE_URL.startswith("sqlite"):
+    engine_args.update({
+        "pool_size": 20,
+        "max_overflow": 10,
+        "pool_pre_ping": True,
+    })
+
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=False,
-    pool_size=20,
-    max_overflow=10,
-    pool_pre_ping=True,
+    **engine_args
 )
 
 AsyncSessionLocal = async_sessionmaker(
